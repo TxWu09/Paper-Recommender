@@ -1,6 +1,6 @@
 # Paper Reading Assistant
 
-Hybrid paper tracking bot for LLM `reasoning / agent / post-training / RL`.
+Hybrid paper tracking bot with user-defined domains, topics, and keyword-driven filtering.
 
 ## Project Status
 
@@ -8,7 +8,7 @@ This repository already implements an end-to-end MVP based on the plan:
 
 - Source ingestion from `arXiv`, `OpenReview`, `Semantic Scholar`, and `Papers With Code`
 - Deduplication (`paper_id`/URL identity + near-duplicate title similarity)
-- Topic tagging for `reasoning`, `agent`, `post_training`, `rl`
+- Topic tagging from configurable taxonomy (not limited to fixed LLM subfields)
 - Multi-signal quality scoring with confidence levels and explainable selection reasons
 - Structured summary generation (template mode by default, API mode optional)
 - Persistence in SQLite
@@ -43,6 +43,33 @@ flowchart LR
 6. Generate structured summaries and risk notes.
 7. Persist all records, export top picks, and produce digest output.
 8. Consume user feedback to adjust future scoring weights.
+
+## Custom Domains and Keyword Selection
+
+The bot is no longer limited to fixed LLM subfields.
+
+- You can define any broad domain in `config/bot_config.yaml` under `domain_keyword_catalog`.
+- You can define your own topic system under `topics`.
+- You can ask the CLI to suggest multi-select keywords for a broad domain.
+- You can run the pipeline with selected keywords or selected topics.
+
+Example domain keyword suggestion:
+
+```bash
+paper-bot-run --config config/bot_config.yaml suggest-keywords --domain LLM --limit 20
+```
+
+Example run with multi-selected keywords:
+
+```bash
+paper-bot-run --config config/bot_config.yaml run --selected-keywords "post-training,pre-training,tool use"
+```
+
+Example run with explicit selected topics:
+
+```bash
+paper-bot-run --config config/bot_config.yaml run --selected-topics "reasoning,agent"
+```
 
 ## Data Schema
 
@@ -203,6 +230,7 @@ Supported commands:
 
 - Run one full cycle: fetch -> dedup -> score -> summarize -> persist -> export -> push
 - Submit feedback for online iteration
+- Suggest keywords by broad domain for user multi-selection
 
 ## Quickstart
 
@@ -250,7 +278,9 @@ paper-bot-run --config config/bot_config.yaml feedback --paper-id "<id>" --signa
 
 - `config/bot_config.yaml` controls:
   - source enable/disable and limits
-  - topic taxonomy aliases
+  - topic taxonomy aliases (fully customizable)
+  - broad-domain keyword catalog for suggestion
+  - default selected topics (`app.selected_topics`)
   - scoring weights
   - summary provider/model
   - export destinations

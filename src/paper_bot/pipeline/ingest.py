@@ -38,6 +38,18 @@ def tag_topics(papers: Iterable[Paper], taxonomy: TopicTaxonomy) -> list[Paper]:
     return tagged
 
 
+def filter_by_selected_topics(papers: Iterable[Paper], selected_topics: list[str] | None) -> list[Paper]:
+    if not selected_topics:
+        return list(papers)
+    selected = {x.strip().lower() for x in selected_topics if x.strip()}
+    filtered: list[Paper] = []
+    for paper in papers:
+        paper.topics = [t for t in paper.topics if t.lower() in selected]
+        if paper.topics:
+            filtered.append(paper)
+    return filtered
+
+
 def _identity_key(paper: Paper) -> str:
     pid = (paper.paper_id or "").lower().strip()
     url = (paper.url or "").lower().strip()

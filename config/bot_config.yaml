@@ -3,6 +3,8 @@ app:
   timezone: "Asia/Shanghai"
   daily_top_n: 5
   weekly_per_topic_n: 2
+  # Optional: if empty, all matched topics are kept.
+  selected_topics: []
 
 storage:
   sqlite_path: "data/papers.db"
@@ -67,6 +69,37 @@ topics:
       - "reward model"
       - "actor critic"
       - "offline rl"
+
+# Broad domain -> candidate keywords. Users can freely extend this
+# for any research area and then multi-select keywords via CLI.
+domain_keyword_catalog:
+  llm:
+    - "post-training"
+    - "pre-training"
+    - "instruction tuning"
+    - "alignment"
+    - "rlhf"
+    - "dpo"
+    - "reasoning"
+    - "chain-of-thought"
+    - "tool use"
+    - "multi-agent"
+    - "retrieval augmented generation"
+    - "long context"
+    - "inference-time compute"
+  computer_vision:
+    - "vision transformer"
+    - "diffusion"
+    - "image segmentation"
+    - "object detection"
+    - "self-supervised learning"
+    - "multimodal"
+  reinforcement_learning:
+    - "policy optimization"
+    - "offline rl"
+    - "model-based rl"
+    - "reward modeling"
+    - "actor critic"
 
 scoring:
   weights:

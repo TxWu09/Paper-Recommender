@@ -8,7 +8,7 @@ from paper_bot.connectors.registry import fetch_all_sources
 from paper_bot.exporters.notion_exporter import NotionExporter
 from paper_bot.exporters.sheet_exporter import SheetExporter
 from paper_bot.pipeline.feedback import derive_weight_adjustments
-from paper_bot.pipeline.ingest import deduplicate_papers, tag_topics
+from paper_bot.pipeline.ingest import deduplicate_papers, filter_by_selected_topics, tag_topics
 from paper_bot.pipeline.push import PushDispatcher
 from paper_bot.pipeline.quality import QualityEngine
 from paper_bot.pipeline.summary import SummaryEngine
@@ -34,10 +34,13 @@ class PaperBot:
         self.notion_exporter = NotionExporter(cfg)
         self.push_dispatcher = PushDispatcher(cfg)
 
-    def run_once(self) -> RunResult:
+    def run_once(self, selected_topics: list[str] | None = None) -> RunResult:
         fetched = fetch_all_sources(self.cfg)
         unique = deduplicate_papers(fetched)
         tagged = tag_topics(unique, self.taxonomy)
+        if selected_topics is None:
+            selected_topics = self.cfg.get("app", {}).get("selected_topics", [])
+        tagged = filter_by_selected_topics(tagged, selected_topics)
 
         feedback_stats = self.store.feedback_stats()
         adjustments = derive_weight_adjustments(feedback_stats)
