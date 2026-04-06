@@ -97,10 +97,24 @@ export:
     index_file: "paper_digest.md"
 ```
 
+**Single Obsidian note (one file path)** — write the digest to an exact note path (e.g. `LLM/Paper Recommender.md` in your vault):
+
+```yaml
+export:
+  obsidian:
+    enabled: true
+    output_path: "D:/Obsidian Vault/LLM/Paper Recommender.md"
+    one_note_per_paper: false
+    vault_path: ""
+```
+
+You can leave `vault_path` empty when using only `output_path`.
+
 ### Output Structure
 
-- Per-paper notes: `<vault_path>/<folder>/<YYYY-MM-DD>/<paper_id>.md`
-- Daily index: `<vault_path>/<folder>/paper_digest.md`
+- **Single file mode** (`output_path` set): digest written to that `.md` file (parent folders are created if needed).
+- **Vault folder mode** (`vault_path` set, no `output_path`): per-paper notes: `<vault_path>/<folder>/<YYYY-MM-DD>/<paper_id>.md`
+- **Vault folder mode** index: `<vault_path>/<folder>/paper_digest.md` when `output_path` is not set
 
 Run as usual:
 
@@ -324,6 +338,31 @@ paper-bot-run --config config/bot_config.yaml feedback --paper-id "<id>" --signa
   - summary provider/model
   - export destinations
   - push settings
+
+### LLM API (OpenAI or DeepSeek)
+
+Summaries use an OpenAI-compatible `POST .../v1/chat/completions` endpoint.
+
+**DeepSeek** (example):
+
+1. Set your key in the shell (PowerShell):
+
+```powershell
+$env:DEEPSEEK_API_KEY="paste-your-key-here"
+```
+
+2. In `config/bot_config.yaml`:
+
+```yaml
+summary:
+  provider: "api"
+  api_provider: "deepseek"
+  base_url: "https://api.deepseek.com/v1/chat/completions"
+  api_key_env: "DEEPSEEK_API_KEY"
+  model: "deepseek-chat"
+```
+
+**OpenAI**: keep `base_url` default or set `api_key_env` to `OPENAI_API_KEY` and use an OpenAI model name.
 
 ## Current Known Limitations
 

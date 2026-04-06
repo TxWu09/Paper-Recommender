@@ -15,6 +15,12 @@ class SummaryEngine:
         self.provider = summary_cfg.get("provider", "local_template")
         self.api_provider = summary_cfg.get("api_provider", "openai")
         self.model = summary_cfg.get("model", "gpt-4o-mini")
+        # OpenAI-compatible chat endpoint (OpenAI, DeepSeek, etc.)
+        self.chat_completions_url = summary_cfg.get(
+            "base_url",
+            "https://api.openai.com/v1/chat/completions",
+        )
+        self.api_key_env = summary_cfg.get("api_key_env", "OPENAI_API_KEY")
 
     def summarize_many(self, scored: list[ScoredPaper]) -> list[ScoredPaper]:
         for item in scored:
@@ -44,11 +50,12 @@ class SummaryEngine:
         )
 
     def _summarize_with_api(self, item: ScoredPaper) -> str:
-        if self.api_provider != "openai":
+        # openai, deepseek, and any OpenAI-compatible API use the same request shape.
+        if self.api_provider not in ("openai", "deepseek", "openai_compatible"):
             raise ValueError(f"Unsupported API provider: {self.api_provider}")
-        api_key = os.getenv("OPENAI_API_KEY", "")
+        api_key = os.getenv(self.api_key_env, "")
         if not api_key:
-            raise ValueError("OPENAI_API_KEY is not set")
+            raise ValueError(f"{self.api_key_env} is not set")
         p = item.paper
         prompt = (
             "You are summarizing a research paper for a graduate student working on LLM reasoning, agents, "
@@ -56,14 +63,14 @@ class SummaryEngine:
             f"\nTitle: {p.title}\nAbstract: {p.abstract}\nVenue: {p.venue}\nAuthors: {', '.join(p.authors)}"
         )
         resp = requests.post(
-            "https://api.openai.com/v1/chat/completions",
+            self.chat_completions_url,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.2,
             },
-            timeout=60,
+            timeout=120,
         )
         resp.raise_for_status()
         payload = resp.json()

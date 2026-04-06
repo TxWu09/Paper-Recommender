@@ -111,9 +111,11 @@ scoring:
     evidence_strength: 0.05
 
 summary:
-  provider: "local_template"
-  api_provider: "openai"
-  model: "gpt-4o-mini"
+  provider: "api"
+  api_provider: "deepseek"
+  base_url: "https://api.deepseek.com/v1/chat/completions"
+  api_key_env: "DEEPSEEK_API_KEY"
+  model: "deepseek-chat"
   max_input_chars: 12000
 
 export:
@@ -124,12 +126,12 @@ export:
     database_id: ""
     token_env: "NOTION_API_KEY"
   obsidian:
-    enabled: false
-    # Example on Windows: "D:/Obsidian/MyVault"
+    enabled: true
+    # Single-file digest into your vault (Obsidian note path). Forward slashes work on Windows.
+    # output_path: "D:/Obsidian Vault/LLM/Paper Recommender.md"
+    output_path: "D:/Obsidian Vault/LLM/Paper Recommender.md"
+    one_note_per_paper: false
     vault_path: ""
-    folder: "Papers"
-    one_note_per_paper: true
-    index_file: "paper_digest.md"
   google_sheet:
     enabled: false
     spreadsheet_id: ""
