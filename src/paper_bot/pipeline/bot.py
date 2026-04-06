@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from paper_bot.connectors.registry import fetch_all_sources
 from paper_bot.exporters.notion_exporter import NotionExporter
+from paper_bot.exporters.obsidian_exporter import ObsidianExporter
 from paper_bot.exporters.sheet_exporter import SheetExporter
 from paper_bot.pipeline.feedback import derive_weight_adjustments
 from paper_bot.pipeline.ingest import deduplicate_papers, filter_by_selected_topics, tag_topics
@@ -32,6 +33,7 @@ class PaperBot:
         self.summary_engine = SummaryEngine(cfg)
         self.sheet_exporter = SheetExporter(cfg)
         self.notion_exporter = NotionExporter(cfg)
+        self.obsidian_exporter = ObsidianExporter(cfg)
         self.push_dispatcher = PushDispatcher(cfg)
 
     def run_once(self, selected_topics: list[str] | None = None) -> RunResult:
@@ -55,6 +57,7 @@ class PaperBot:
         selected = [id_to_scored[r["paper_id"]] for r in top_rows if r["paper_id"] in id_to_scored]
         self.sheet_exporter.export(selected)
         self.notion_exporter.export(selected)
+        self.obsidian_exporter.export(selected)
         self.push_dispatcher.write_markdown_digest(selected)
         self.store.mark_pushed([x.paper.paper_id for x in selected])
         return RunResult(

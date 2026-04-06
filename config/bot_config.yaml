@@ -123,6 +123,13 @@ export:
     enabled: false
     database_id: ""
     token_env: "NOTION_API_KEY"
+  obsidian:
+    enabled: false
+    # Example on Windows: "D:/Obsidian/MyVault"
+    vault_path: ""
+    folder: "Papers"
+    one_note_per_paper: true
+    index_file: "paper_digest.md"
   google_sheet:
     enabled: false
     spreadsheet_id: ""

@@ -12,7 +12,7 @@ This repository already implements an end-to-end MVP based on the plan:
 - Multi-signal quality scoring with confidence levels and explainable selection reasons
 - Structured summary generation (template mode by default, API mode optional)
 - Persistence in SQLite
-- Export to `CSV/XLSX`, optional sync to Notion, and markdown digest generation
+- Export to `CSV/XLSX`, optional sync to Notion/Obsidian, and markdown digest generation
 - Feedback loop (`like/dislike`) that adjusts scoring weights over time
 
 ## Architecture
@@ -26,6 +26,7 @@ flowchart LR
   summaryEngine --> storageLayer[SQLiteStorage]
   storageLayer --> sheetExporter[CSVXLSXExporter]
   storageLayer --> notionExporter[NotionExporterOptional]
+  storageLayer --> obsidianExporter[ObsidianExporterOptional]
   storageLayer --> pushDispatcher[MarkdownDigest]
   pushDispatcher --> researcherView[ResearcherView]
   storageLayer --> feedbackStore[FeedbackSignals]
@@ -69,6 +70,42 @@ Example run with explicit selected topics:
 
 ```bash
 paper-bot-run --config config/bot_config.yaml run --selected-topics "reasoning,agent"
+```
+
+## Obsidian Integration
+
+This project supports exporting recommendations directly into your Obsidian vault.
+
+### Features
+
+- One-note-per-paper export as Markdown
+- YAML frontmatter for Dataview compatibility
+- Auto tags such as `#paper/recommendation` and `#topic/<topic>`
+- Daily index note (`paper_digest.md`) inside your configured folder
+
+### Configuration
+
+Edit `config/bot_config.yaml`:
+
+```yaml
+export:
+  obsidian:
+    enabled: true
+    vault_path: "D:/Obsidian/MyVault"
+    folder: "Papers"
+    one_note_per_paper: true
+    index_file: "paper_digest.md"
+```
+
+### Output Structure
+
+- Per-paper notes: `<vault_path>/<folder>/<YYYY-MM-DD>/<paper_id>.md`
+- Daily index: `<vault_path>/<folder>/paper_digest.md`
+
+Run as usual:
+
+```bash
+paper-bot-run --config config/bot_config.yaml run
 ```
 
 ## Data Schema
@@ -203,6 +240,7 @@ Export:
 
 - `src/paper_bot/exporters/sheet_exporter.py` -> `data/recommendations.csv` + `data/recommendations.xlsx`
 - `src/paper_bot/exporters/notion_exporter.py` -> optional Notion database sync
+- `src/paper_bot/exporters/obsidian_exporter.py` -> optional Obsidian vault notes
 
 Push:
 
@@ -247,6 +285,7 @@ pip install -e .
 - Edit `config/bot_config.yaml`
 - Optional: set `OPENAI_API_KEY` and `NOTION_API_KEY`
 - Optional: enable `export.notion.enabled` and fill `database_id`
+- Optional: enable `export.obsidian.enabled` and set `vault_path`
 
 3. Run one full cycle:
 
