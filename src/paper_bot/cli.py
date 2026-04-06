@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import argparse
 
-from paper_bot.domain_keywords import suggest_keywords_for_domain, topics_from_selected_keywords
+from paper_bot.domain_keywords import topics_from_selected_keywords
+from paper_bot.interactive_prefs import prompt_preferences
 from paper_bot.pipeline.bot import PaperBot
 from paper_bot.storage.sqlite_store import SQLiteStore
 from paper_bot.utils.config import load_config
@@ -26,6 +27,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Comma-separated keywords; will be mapped to topics via topic aliases.",
     )
+    run.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        help="Prompt for domain + keywords from domain_keyword_catalog in config.",
+    )
 
     fb = sub.add_parser("feedback", help="Submit feedback signal for a paper")
     fb.add_argument("--paper-id", required=True)
@@ -44,26 +51,74 @@ def _parse_csv(value: str) -> list[str]:
     return [x.strip() for x in value.split(",") if x.strip()]
 
 
+def _dedupe_preserve(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for x in items:
+        if x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+    return out
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
     cfg = load_config(args.config)
     if args.command in (None, "run"):
         bot = PaperBot(cfg)
-        selected_topics = _parse_csv(getattr(args, "selected_topics", ""))
-        selected_keywords = _parse_csv(getattr(args, "selected_keywords", ""))
-        if selected_keywords:
-            selected_topics.extend(topics_from_selected_keywords(cfg, selected_keywords))
-        if not selected_topics:
-            selected_topics = cfg.get("app", {}).get("selected_topics", [])
-        result = bot.run_once(selected_topics=selected_topics)
+
+        cli_topics = _parse_csv(getattr(args, "selected_topics", ""))
+        cli_keywords = _parse_csv(getattr(args, "selected_keywords", ""))
+        interactive = bool(getattr(args, "interactive", False)) or bool(
+            cfg.get("app", {}).get("interactive_on_run", False)
+        )
+
+        # Non-interactive: if user passed CLI flags, do not open prompt
+        if cli_topics or cli_keywords:
+            interactive = False
+
+        selected_topics: list[str] | None = None
+        keyword_substrings: list[str] | None = None
+
+        if interactive:
+            topics, kw = prompt_preferences(cfg)
+            if topics:
+                selected_topics = topics
+            elif kw:
+                selected_topics = []
+                keyword_substrings = kw
+            else:
+                # Skip (0) or empty catalog: no extra filter
+                selected_topics = []
+        else:
+            selected_topics = list(cli_topics)
+            keyword_substrings = None
+            if cli_keywords:
+                mapped = topics_from_selected_keywords(cfg, cli_keywords)
+                if mapped:
+                    selected_topics = _dedupe_preserve(selected_topics + mapped)
+                else:
+                    keyword_substrings = cli_keywords
+            if selected_topics is not None and not selected_topics and not keyword_substrings:
+                # No CLI filter: use yaml app.selected_topics
+                selected_topics = None
+
+        result = bot.run_once(
+            selected_topics=selected_topics,
+            keyword_substrings=keyword_substrings,
+        )
+        st = selected_topics if selected_topics is not None else cfg.get("app", {}).get("selected_topics", [])
         print(
             f"Run complete: fetched={result.total_fetched}, "
             f"unique={result.total_unique}, recommended={result.total_recommended}, "
-            f"selected_topics={selected_topics or 'ALL'}"
+            f"selected_topics={st or 'ALL'}, keyword_substrings={keyword_substrings or 'NONE'}"
         )
         return
     if args.command == "suggest-keywords":
+        from paper_bot.domain_keywords import suggest_keywords_for_domain
+
         suggestions = suggest_keywords_for_domain(cfg, args.domain, limit=args.limit)
         if not suggestions:
             print(

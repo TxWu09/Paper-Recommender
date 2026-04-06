@@ -50,6 +50,21 @@ def filter_by_selected_topics(papers: Iterable[Paper], selected_topics: list[str
     return filtered
 
 
+def filter_by_keyword_substrings(papers: Iterable[Paper], keywords: list[str] | None) -> list[Paper]:
+    """Keep papers whose title+abstract contains any of the given phrases (case-insensitive)."""
+    if not keywords:
+        return list(papers)
+    needles = [k.strip().lower() for k in keywords if k.strip()]
+    if not needles:
+        return list(papers)
+    filtered: list[Paper] = []
+    for paper in papers:
+        text = f"{paper.title}\n{paper.abstract}".lower()
+        if any(n in text for n in needles):
+            filtered.append(paper)
+    return filtered
+
+
 def _identity_key(paper: Paper) -> str:
     pid = (paper.paper_id or "").lower().strip()
     url = (paper.url or "").lower().strip()

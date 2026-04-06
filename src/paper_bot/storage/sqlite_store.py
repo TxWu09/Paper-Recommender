@@ -58,6 +58,15 @@ class SQLiteStore:
             """
         )
         self.conn.commit()
+        self._migrate_schema()
+
+    def _migrate_schema(self) -> None:
+        """Add columns if missing (older DB files)."""
+        try:
+            self.conn.execute("ALTER TABLE papers ADD COLUMN pushed_at TEXT")
+            self.conn.commit()
+        except sqlite3.OperationalError:
+            pass
 
     def upsert_scored_papers(self, papers: list[ScoredPaper]) -> None:
         for item in papers:
@@ -120,11 +129,26 @@ class SQLiteStore:
             "SELECT * FROM papers WHERE pushed = 0 ORDER BY final_score DESC LIMIT ?", (limit,)
         ).fetchall()
 
+    def get_pushed_flags(self, paper_ids: list[str]) -> dict[str, int]:
+        """Return paper_id -> pushed (0 or 1). Omitted ids are treated as unpushed when absent."""
+        if not paper_ids:
+            return {}
+        placeholders = ",".join("?" for _ in paper_ids)
+        rows = self.conn.execute(
+            f"SELECT paper_id, pushed FROM papers WHERE paper_id IN ({placeholders})",
+            paper_ids,
+        ).fetchall()
+        return {str(r["paper_id"]): int(r["pushed"]) for r in rows}
+
     def mark_pushed(self, paper_ids: list[str]) -> None:
         if not paper_ids:
             return
-        placeholders = ",".join("?" for _ in paper_ids)
-        self.conn.execute(f"UPDATE papers SET pushed = 1 WHERE paper_id IN ({placeholders})", paper_ids)
+        now = datetime.utcnow().isoformat()
+        for pid in paper_ids:
+            self.conn.execute(
+                "UPDATE papers SET pushed = 1, pushed_at = ? WHERE paper_id = ?",
+                (now, pid),
+            )
         self.conn.commit()
 
     def add_feedback(self, paper_id: str, signal: str, value: int) -> None:

@@ -51,3 +51,18 @@ def _dedup(items: list[str]) -> list[str]:
         seen.add(item)
         out.append(item)
     return out
+
+
+def domain_catalog_keys(cfg: dict) -> list[str]:
+    catalogs = cfg.get("domain_keyword_catalog", {}) or {}
+    if not isinstance(catalogs, dict):
+        return []
+    return list(catalogs.keys())
+
+
+def keywords_for_catalog_key(cfg: dict, key: str) -> list[str]:
+    catalogs = cfg.get("domain_keyword_catalog", {}) or {}
+    if not isinstance(catalogs, dict):
+        return []
+    raw = catalogs.get(key)
+    return _dedup(_as_keyword_list(raw))

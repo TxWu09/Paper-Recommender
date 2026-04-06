@@ -1,3 +1,13 @@
+Metadata-Version: 2.4
+Name: paper-reading-assistant
+Version: 0.1.0
+Summary: Paper tracking bot for LLM reasoning/agent/post-training/RL.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: requests>=2.32.0
+Requires-Dist: openpyxl>=3.1.5
+
 # Paper Reading Assistant
 
 Hybrid paper tracking bot with user-defined domains, topics, and keyword-driven filtering.
@@ -71,20 +81,6 @@ Example run with explicit selected topics:
 ```bash
 paper-bot-run --config config/bot_config.yaml run --selected-topics "reasoning,agent"
 ```
-
-### Interactive preferences (domain + keywords from config)
-
-`domain_keyword_catalog` in `bot_config.yaml` is **not** used automatically on every run unless you enable interaction.
-
-- **Option A — flag:** prompt every time you run:
-
-```bash
-paper-bot-run --config config/bot_config.yaml run --interactive
-```
-
-- **Option B — config:** set `app.interactive_on_run: true` so a normal `run` opens the prompt (unless you pass `--selected-topics` or `--selected-keywords`).
-
-The prompt asks you to pick a broad domain (e.g. `llm`) and multi-select keyword numbers. If your keywords do not match any `topics.*.aliases`, papers are still filtered by **keyword text** in title/abstract.
 
 ## Obsidian Integration
 
@@ -329,15 +325,10 @@ paper-bot-run --config config/bot_config.yaml feedback --paper-id "<id>" --signa
 
 ## Runtime Outputs
 
-- `data/papers.db`: persistent paper store + score + summary + **push state** (`pushed`, `pushed_at`) + feedback
-- `data/pushed_history.csv` (if `export.push_history_csv` is set): append-only log of every pushed paper (open in Excel)
+- `data/papers.db`: persistent paper store + score + summary + push state + feedback
 - `data/recommendations.csv`: tabular recommendations for spreadsheet workflows
 - `data/recommendations.xlsx`: Excel workbook for local/offline use
 - `data/daily_digest.md`: generated digest for daily push/report
-
-### Duplicate push prevention
-
-Each run only exports the top `daily_top_n` papers **from the current fetch** that are **not yet pushed** (`pushed = 0` in SQLite). Once exported, rows are marked `pushed = 1` with a UTC `pushed_at` timestamp. Re-fetching the same `paper_id` updates scores but **does not** reset `pushed`, so it will not be recommended again unless you clear the flag in the database.
 
 ## Outputs
 

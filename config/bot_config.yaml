@@ -5,6 +5,8 @@ app:
   weekly_per_topic_n: 2
   # Optional: if empty, all matched topics are kept.
   selected_topics: []
+  # If true, `run` prompts for domain + keywords from domain_keyword_catalog (unless you pass --selected-*).
+  interactive_on_run: false
 
 storage:
   sqlite_path: "data/papers.db"
@@ -121,6 +123,8 @@ summary:
 export:
   excel_path: "data/recommendations.xlsx"
   csv_path: "data/recommendations.csv"
+  # Append-only log of each push (Excel-friendly UTF-8 BOM). Set to "" to disable.
+  push_history_csv: "data/pushed_history.csv"
   notion:
     enabled: false
     database_id: ""
