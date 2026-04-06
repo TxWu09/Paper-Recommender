@@ -1,0 +1,101 @@
+app:
+  name: "paper-reading-assistant"
+  timezone: "Asia/Shanghai"
+  daily_top_n: 5
+  weekly_per_topic_n: 2
+
+storage:
+  sqlite_path: "data/papers.db"
+  raw_cache_dir: "data/raw"
+
+sources:
+  arxiv:
+    enabled: true
+    base_url: "https://export.arxiv.org/api/query"
+    categories:
+      - "cs.CL"
+      - "cs.AI"
+      - "cs.LG"
+    max_results: 100
+  openreview:
+    enabled: true
+    base_url: "https://api2.openreview.net/notes"
+    venues:
+      - "ICLR.cc"
+      - "NeurIPS.cc"
+      - "ICML.cc"
+      - "aclweb.org"
+    limit: 100
+  semantic_scholar:
+    enabled: true
+    base_url: "https://api.semanticscholar.org/graph/v1/paper/search"
+    query: "large language model reasoning agent post-training reinforcement learning"
+    limit: 100
+  papers_with_code:
+    enabled: true
+    base_url: "https://paperswithcode.com/api/v1/papers/"
+    limit: 100
+
+topics:
+  reasoning:
+    aliases:
+      - "reasoning"
+      - "chain-of-thought"
+      - "inference-time compute"
+      - "search and planning"
+      - "self-consistency"
+  agent:
+    aliases:
+      - "agent"
+      - "tool use"
+      - "function calling"
+      - "multi-agent"
+      - "planning and acting"
+  post_training:
+    aliases:
+      - "post-training"
+      - "alignment"
+      - "instruction tuning"
+      - "preference optimization"
+      - "dpo"
+      - "ppo"
+      - "rlhf"
+  rl:
+    aliases:
+      - "reinforcement learning"
+      - "policy optimization"
+      - "reward model"
+      - "actor critic"
+      - "offline rl"
+
+scoring:
+  weights:
+    topic_fit: 0.35
+    venue_signal: 0.20
+    author_org_signal: 0.15
+    impact_signal: 0.15
+    method_novelty: 0.10
+    evidence_strength: 0.05
+
+summary:
+  provider: "local_template"
+  api_provider: "openai"
+  model: "gpt-4o-mini"
+  max_input_chars: 12000
+
+export:
+  excel_path: "data/recommendations.xlsx"
+  csv_path: "data/recommendations.csv"
+  notion:
+    enabled: false
+    database_id: ""
+    token_env: "NOTION_API_KEY"
+  google_sheet:
+    enabled: false
+    spreadsheet_id: ""
+    credentials_json: ""
+
+push:
+  channels:
+    - "markdown_report"
+  markdown_report_path: "data/daily_digest.md"

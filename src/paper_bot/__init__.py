@@ -1,0 +1,2 @@
+"""Paper tracking bot package."""
+
